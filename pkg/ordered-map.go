@@ -17,41 +17,41 @@ type node[K constraints.Ordered, V any] struct {
 	size        int
 }
 
-type RedBlackBST[K constraints.Ordered, V any] struct {
+type OrderedMap[K constraints.Ordered, V any] struct {
 	root *node[K, V]
 }
 
-func NewRedBlackBST[K constraints.Ordered, V any]() *RedBlackBST[K, V] {
-	return &RedBlackBST[K, V]{}
+func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
+	return &OrderedMap[K, V]{}
 }
 
-func (t *RedBlackBST[K, V]) isRed(x *node[K, V]) bool {
+func (t *OrderedMap[K, V]) isRed(x *node[K, V]) bool {
 	if x == nil {
 		return false
 	}
 	return x.color == RED
 }
 
-func (t *RedBlackBST[K, V]) size(x *node[K, V]) int {
+func (t *OrderedMap[K, V]) size(x *node[K, V]) int {
 	if x == nil {
 		return 0
 	}
 	return x.size
 }
 
-func (t *RedBlackBST[K, V]) Size() int {
+func (t *OrderedMap[K, V]) Size() int {
 	return t.size(t.root)
 }
 
-func (t *RedBlackBST[K, V]) IsEmpty() bool {
+func (t *OrderedMap[K, V]) IsEmpty() bool {
 	return t.root == nil
 }
 
-func (t *RedBlackBST[K, V]) Get(key K) (V, bool) {
+func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 	return t.get(t.root, key)
 }
 
-func (t *RedBlackBST[K, V]) get(x *node[K, V], key K) (V, bool) {
+func (t *OrderedMap[K, V]) get(x *node[K, V], key K) (V, bool) {
 	for x != nil {
 		switch {
 		case key < x.key:
@@ -66,17 +66,17 @@ func (t *RedBlackBST[K, V]) get(x *node[K, V], key K) (V, bool) {
 	return zero, false
 }
 
-func (t *RedBlackBST[K, V]) Contains(key K) bool {
+func (t *OrderedMap[K, V]) Contains(key K) bool {
 	_, found := t.Get(key)
 	return found
 }
 
-func (t *RedBlackBST[K, V]) Put(key K, val V) {
+func (t *OrderedMap[K, V]) Put(key K, val V) {
 	t.root = t.put(t.root, key, val)
 	t.root.color = BLACK
 }
 
-func (t *RedBlackBST[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
+func (t *OrderedMap[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
 	if h == nil {
 		return &node[K, V]{key: key, val: val, color: RED, size: 1}
 	}
@@ -104,7 +104,7 @@ func (t *RedBlackBST[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
 	return h
 }
 
-func (t *RedBlackBST[K, V]) rotateRight(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) rotateRight(h *node[K, V]) *node[K, V] {
 	x := h.left
 	h.left = x.right
 	x.right = h
@@ -115,7 +115,7 @@ func (t *RedBlackBST[K, V]) rotateRight(h *node[K, V]) *node[K, V] {
 	return x
 }
 
-func (t *RedBlackBST[K, V]) rotateLeft(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) rotateLeft(h *node[K, V]) *node[K, V] {
 	x := h.right
 	h.right = x.left
 	x.left = h
@@ -126,13 +126,13 @@ func (t *RedBlackBST[K, V]) rotateLeft(h *node[K, V]) *node[K, V] {
 	return x
 }
 
-func (t *RedBlackBST[K, V]) flipColors(h *node[K, V]) {
+func (t *OrderedMap[K, V]) flipColors(h *node[K, V]) {
 	h.color = !h.color
 	h.left.color = !h.left.color
 	h.right.color = !h.right.color
 }
 
-func (t *RedBlackBST[K, V]) DeleteMin() {
+func (t *OrderedMap[K, V]) DeleteMin() {
 	if t.IsEmpty() {
 		panic("BST underflow")
 	}
@@ -147,7 +147,7 @@ func (t *RedBlackBST[K, V]) DeleteMin() {
 	}
 }
 
-func (t *RedBlackBST[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
 	if h.left == nil {
 		return nil
 	}
@@ -160,7 +160,7 @@ func (t *RedBlackBST[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
 	return t.balance(h)
 }
 
-func (t *RedBlackBST[K, V]) DeleteMax() {
+func (t *OrderedMap[K, V]) DeleteMax() {
 	if t.IsEmpty() {
 		panic("BST underflow")
 	}
@@ -175,7 +175,7 @@ func (t *RedBlackBST[K, V]) DeleteMax() {
 	}
 }
 
-func (t *RedBlackBST[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
 	if t.isRed(h.left) {
 		h = t.rotateRight(h)
 	}
@@ -193,7 +193,7 @@ func (t *RedBlackBST[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
 	return t.balance(h)
 }
 
-func (t *RedBlackBST[K, V]) Delete(key K) {
+func (t *OrderedMap[K, V]) Delete(key K) {
 	if !t.Contains(key) {
 		return
 	}
@@ -208,7 +208,7 @@ func (t *RedBlackBST[K, V]) Delete(key K) {
 	}
 }
 
-func (t *RedBlackBST[K, V]) delete(h *node[K, V], key K) *node[K, V] {
+func (t *OrderedMap[K, V]) delete(h *node[K, V], key K) *node[K, V] {
 	if key < h.key {
 		if !t.isRed(h.left) && !t.isRed(h.left.left) {
 			h = t.moveRedLeft(h)
@@ -236,7 +236,7 @@ func (t *RedBlackBST[K, V]) delete(h *node[K, V], key K) *node[K, V] {
 	return t.balance(h)
 }
 
-func (t *RedBlackBST[K, V]) moveRedLeft(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) moveRedLeft(h *node[K, V]) *node[K, V] {
 	t.flipColors(h)
 	if t.isRed(h.right.left) {
 		h.right = t.rotateRight(h.right)
@@ -246,7 +246,7 @@ func (t *RedBlackBST[K, V]) moveRedLeft(h *node[K, V]) *node[K, V] {
 	return h
 }
 
-func (t *RedBlackBST[K, V]) moveRedRight(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) moveRedRight(h *node[K, V]) *node[K, V] {
 	t.flipColors(h)
 	if t.isRed(h.left.left) {
 		h = t.rotateRight(h)
@@ -255,7 +255,7 @@ func (t *RedBlackBST[K, V]) moveRedRight(h *node[K, V]) *node[K, V] {
 	return h
 }
 
-func (t *RedBlackBST[K, V]) balance(h *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) balance(h *node[K, V]) *node[K, V] {
 	if t.isRed(h.right) && !t.isRed(h.left) {
 		h = t.rotateLeft(h)
 	}
@@ -270,18 +270,18 @@ func (t *RedBlackBST[K, V]) balance(h *node[K, V]) *node[K, V] {
 	return h
 }
 
-func (t *RedBlackBST[K, V]) Height() int {
+func (t *OrderedMap[K, V]) Height() int {
 	return t.height(t.root)
 }
 
-func (t *RedBlackBST[K, V]) height(x *node[K, V]) int {
+func (t *OrderedMap[K, V]) height(x *node[K, V]) int {
 	if x == nil {
 		return -1
 	}
 	return 1 + max(t.height(x.left), t.height(x.right))
 }
 
-func (t *RedBlackBST[K, V]) Min() (K, bool) {
+func (t *OrderedMap[K, V]) Min() (K, bool) {
 	if t.IsEmpty() {
 		var zero K
 		return zero, false
@@ -289,14 +289,14 @@ func (t *RedBlackBST[K, V]) Min() (K, bool) {
 	return t.min(t.root).key, true
 }
 
-func (t *RedBlackBST[K, V]) min(x *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) min(x *node[K, V]) *node[K, V] {
 	if x.left == nil {
 		return x
 	}
 	return t.min(x.left)
 }
 
-func (t *RedBlackBST[K, V]) Max() (K, bool) {
+func (t *OrderedMap[K, V]) Max() (K, bool) {
 	if t.IsEmpty() {
 		var zero K
 		return zero, false
@@ -304,14 +304,14 @@ func (t *RedBlackBST[K, V]) Max() (K, bool) {
 	return t.max(t.root).key, true
 }
 
-func (t *RedBlackBST[K, V]) max(x *node[K, V]) *node[K, V] {
+func (t *OrderedMap[K, V]) max(x *node[K, V]) *node[K, V] {
 	if x.right == nil {
 		return x
 	}
 	return t.max(x.right)
 }
 
-func (t *RedBlackBST[K, V]) Floor(key K) (K, bool) {
+func (t *OrderedMap[K, V]) Floor(key K) (K, bool) {
 	x := t.floor(t.root, key)
 	if x == nil {
 		var zero K
@@ -320,7 +320,7 @@ func (t *RedBlackBST[K, V]) Floor(key K) (K, bool) {
 	return x.key, true
 }
 
-func (t *RedBlackBST[K, V]) floor(x *node[K, V], key K) *node[K, V] {
+func (t *OrderedMap[K, V]) floor(x *node[K, V], key K) *node[K, V] {
 	if x == nil {
 		return nil
 	}
@@ -337,7 +337,7 @@ func (t *RedBlackBST[K, V]) floor(x *node[K, V], key K) *node[K, V] {
 	return x
 }
 
-func (t *RedBlackBST[K, V]) Ceiling(key K) (K, bool) {
+func (t *OrderedMap[K, V]) Ceiling(key K) (K, bool) {
 	x := t.ceiling(t.root, key)
 	if x == nil {
 		var zero K
@@ -346,7 +346,7 @@ func (t *RedBlackBST[K, V]) Ceiling(key K) (K, bool) {
 	return x.key, true
 }
 
-func (t *RedBlackBST[K, V]) ceiling(x *node[K, V], key K) *node[K, V] {
+func (t *OrderedMap[K, V]) ceiling(x *node[K, V], key K) *node[K, V] {
 	if x == nil {
 		return nil
 	}
@@ -363,11 +363,11 @@ func (t *RedBlackBST[K, V]) ceiling(x *node[K, V], key K) *node[K, V] {
 	return x
 }
 
-func (t *RedBlackBST[K, V]) Rank(key K) int {
+func (t *OrderedMap[K, V]) Rank(key K) int {
 	return t.rank(key, t.root)
 }
 
-func (t *RedBlackBST[K, V]) rank(key K, x *node[K, V]) int {
+func (t *OrderedMap[K, V]) rank(key K, x *node[K, V]) int {
 	if x == nil {
 		return 0
 	}
@@ -380,7 +380,7 @@ func (t *RedBlackBST[K, V]) rank(key K, x *node[K, V]) int {
 	}
 }
 
-func (t *RedBlackBST[K, V]) Keys() []K {
+func (t *OrderedMap[K, V]) Keys() []K {
 	if t.IsEmpty() {
 		return []K{}
 	}
@@ -389,13 +389,13 @@ func (t *RedBlackBST[K, V]) Keys() []K {
 	return t.KeysInRange(min, max)
 }
 
-func (t *RedBlackBST[K, V]) KeysInRange(lo, hi K) []K {
+func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
 	queue := make([]K, 0)
 	t.keysInRange(t.root, &queue, lo, hi)
 	return queue
 }
 
-func (t *RedBlackBST[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
+func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	if x == nil {
 		return
 	}
@@ -412,7 +412,7 @@ func (t *RedBlackBST[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	}
 }
 
-func (t *RedBlackBST[K, V]) SizeInRange(lo, hi K) int {
+func (t *OrderedMap[K, V]) SizeInRange(lo, hi K) int {
 	if lo > hi {
 		return 0
 	}
