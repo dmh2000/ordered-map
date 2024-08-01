@@ -25,6 +25,82 @@ func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
 	return &OrderedMap[K, V]{}
 }
 
+// ===========================================
+// exported methods
+// ===========================================
+
+func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
+	return t.get(t.root, key)
+}
+
+func (t *OrderedMap[K, V]) Put(key K, val V) {
+	t.root = t.put(t.root, key, val)
+	t.root.color = BLACK
+}
+
+func (t *OrderedMap[K, V]) Contains(key K) bool {
+	_, found := t.Get(key)
+	return found
+}
+
+func (t *OrderedMap[K, V]) Delete(key K) {
+	if !t.Contains(key) {
+		return
+	}
+
+	if !t.isRed(t.root.left) && !t.isRed(t.root.right) {
+		t.root.color = RED
+	}
+
+	t.root = t.delete(t.root, key)
+	if !t.IsEmpty() {
+		t.root.color = BLACK
+	}
+}
+
+func (t *OrderedMap[K, V]) Keys() []K {
+	if t.IsEmpty() {
+		return []K{}
+	}
+	min, _ := t.Min()
+	max, _ := t.Max()
+	return t.KeysInRange(min, max)
+}
+
+func (t *OrderedMap[K, V]) Size() int {
+	return t.size(t.root)
+}
+
+func (t *OrderedMap[K, V]) IsEmpty() bool {
+	return t.root == nil
+}
+
+func (t *OrderedMap[K, V]) Min() (K, bool) {
+	if t.IsEmpty() {
+		var zero K
+		return zero, false
+	}
+	return t.min(t.root).key, true
+}
+
+func (t *OrderedMap[K, V]) Max() (K, bool) {
+	if t.IsEmpty() {
+		var zero K
+		return zero, false
+	}
+	return t.max(t.root).key, true
+}
+
+func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
+	queue := make([]K, 0)
+	t.keysInRange(t.root, &queue, lo, hi)
+	return queue
+}
+
+// ===========================================
+// helper functions
+// ===========================================
+
 func (t *OrderedMap[K, V]) isRed(x *node[K, V]) bool {
 	if x == nil {
 		return false
@@ -37,18 +113,6 @@ func (t *OrderedMap[K, V]) size(x *node[K, V]) int {
 		return 0
 	}
 	return x.size
-}
-
-func (t *OrderedMap[K, V]) Size() int {
-	return t.size(t.root)
-}
-
-func (t *OrderedMap[K, V]) IsEmpty() bool {
-	return t.root == nil
-}
-
-func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
-	return t.get(t.root, key)
 }
 
 func (t *OrderedMap[K, V]) get(x *node[K, V], key K) (V, bool) {
@@ -64,16 +128,6 @@ func (t *OrderedMap[K, V]) get(x *node[K, V], key K) (V, bool) {
 	}
 	var zero V
 	return zero, false
-}
-
-func (t *OrderedMap[K, V]) Contains(key K) bool {
-	_, found := t.Get(key)
-	return found
-}
-
-func (t *OrderedMap[K, V]) Put(key K, val V) {
-	t.root = t.put(t.root, key, val)
-	t.root.color = BLACK
 }
 
 func (t *OrderedMap[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
@@ -193,21 +247,6 @@ func (t *OrderedMap[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
 	return t.balance(h)
 }
 
-func (t *OrderedMap[K, V]) Delete(key K) {
-	if !t.Contains(key) {
-		return
-	}
-
-	if !t.isRed(t.root.left) && !t.isRed(t.root.right) {
-		t.root.color = RED
-	}
-
-	t.root = t.delete(t.root, key)
-	if !t.IsEmpty() {
-		t.root.color = BLACK
-	}
-}
-
 func (t *OrderedMap[K, V]) delete(h *node[K, V], key K) *node[K, V] {
 	if key < h.key {
 		if !t.isRed(h.left) && !t.isRed(h.left.left) {
@@ -270,14 +309,6 @@ func (t *OrderedMap[K, V]) balance(h *node[K, V]) *node[K, V] {
 	return h
 }
 
-func (t *OrderedMap[K, V]) Min() (K, bool) {
-	if t.IsEmpty() {
-		var zero K
-		return zero, false
-	}
-	return t.min(t.root).key, true
-}
-
 func (t *OrderedMap[K, V]) min(x *node[K, V]) *node[K, V] {
 	if x.left == nil {
 		return x
@@ -285,34 +316,11 @@ func (t *OrderedMap[K, V]) min(x *node[K, V]) *node[K, V] {
 	return t.min(x.left)
 }
 
-func (t *OrderedMap[K, V]) Max() (K, bool) {
-	if t.IsEmpty() {
-		var zero K
-		return zero, false
-	}
-	return t.max(t.root).key, true
-}
-
 func (t *OrderedMap[K, V]) max(x *node[K, V]) *node[K, V] {
 	if x.right == nil {
 		return x
 	}
 	return t.max(x.right)
-}
-
-func (t *OrderedMap[K, V]) Keys() []K {
-	if t.IsEmpty() {
-		return []K{}
-	}
-	min, _ := t.Min()
-	max, _ := t.Max()
-	return t.KeysInRange(min, max)
-}
-
-func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
-	queue := make([]K, 0)
-	t.keysInRange(t.root, &queue, lo, hi)
-	return queue
 }
 
 func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
