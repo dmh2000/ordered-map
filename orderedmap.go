@@ -270,17 +270,6 @@ func (t *OrderedMap[K, V]) balance(h *node[K, V]) *node[K, V] {
 	return h
 }
 
-func (t *OrderedMap[K, V]) Height() int {
-	return t.height(t.root)
-}
-
-func (t *OrderedMap[K, V]) height(x *node[K, V]) int {
-	if x == nil {
-		return -1
-	}
-	return 1 + max(t.height(x.left), t.height(x.right))
-}
-
 func (t *OrderedMap[K, V]) Min() (K, bool) {
 	if t.IsEmpty() {
 		var zero K
@@ -309,75 +298,6 @@ func (t *OrderedMap[K, V]) max(x *node[K, V]) *node[K, V] {
 		return x
 	}
 	return t.max(x.right)
-}
-
-func (t *OrderedMap[K, V]) Floor(key K) (K, bool) {
-	x := t.floor(t.root, key)
-	if x == nil {
-		var zero K
-		return zero, false
-	}
-	return x.key, true
-}
-
-func (t *OrderedMap[K, V]) floor(x *node[K, V], key K) *node[K, V] {
-	if x == nil {
-		return nil
-	}
-	if key == x.key {
-		return x
-	}
-	if key < x.key {
-		return t.floor(x.left, key)
-	}
-	y := t.floor(x.right, key)
-	if y != nil {
-		return y
-	}
-	return x
-}
-
-func (t *OrderedMap[K, V]) Ceiling(key K) (K, bool) {
-	x := t.ceiling(t.root, key)
-	if x == nil {
-		var zero K
-		return zero, false
-	}
-	return x.key, true
-}
-
-func (t *OrderedMap[K, V]) ceiling(x *node[K, V], key K) *node[K, V] {
-	if x == nil {
-		return nil
-	}
-	if key == x.key {
-		return x
-	}
-	if key > x.key {
-		return t.ceiling(x.right, key)
-	}
-	y := t.ceiling(x.left, key)
-	if y != nil {
-		return y
-	}
-	return x
-}
-
-func (t *OrderedMap[K, V]) Rank(key K) int {
-	return t.rank(key, t.root)
-}
-
-func (t *OrderedMap[K, V]) rank(key K, x *node[K, V]) int {
-	if x == nil {
-		return 0
-	}
-	if key < x.key {
-		return t.rank(key, x.left)
-	} else if key > x.key {
-		return 1 + t.size(x.left) + t.rank(key, x.right)
-	} else {
-		return t.size(x.left)
-	}
 }
 
 func (t *OrderedMap[K, V]) Keys() []K {
@@ -410,22 +330,4 @@ func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	if cmphi {
 		t.keysInRange(x.right, queue, lo, hi)
 	}
-}
-
-func (t *OrderedMap[K, V]) SizeInRange(lo, hi K) int {
-	if lo > hi {
-		return 0
-	}
-	if t.Contains(hi) {
-		return t.Rank(hi) - t.Rank(lo) + 1
-	} else {
-		return t.Rank(hi) - t.Rank(lo)
-	}
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
