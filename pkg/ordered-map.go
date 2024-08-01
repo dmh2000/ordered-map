@@ -1,5 +1,7 @@
 package orderedmap
 
+import "golang.org/x/exp/constraints"
+
 type color bool
 
 const (
@@ -7,7 +9,7 @@ const (
 	BLACK color = false
 )
 
-type node[K comparable, V any] struct {
+type node[K constraints.Ordered, V any] struct {
 	key         K
 	val         V
 	left, right *node[K, V]
@@ -15,11 +17,11 @@ type node[K comparable, V any] struct {
 	size        int
 }
 
-type RedBlackBST[K comparable, V any] struct {
+type RedBlackBST[K constraints.Ordered, V any] struct {
 	root *node[K, V]
 }
 
-func NewRedBlackBST[K comparable, V any]() *RedBlackBST[K, V] {
+func NewRedBlackBST[K constraints.Ordered, V any]() *RedBlackBST[K, V] {
 	return &RedBlackBST[K, V]{}
 }
 
