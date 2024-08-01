@@ -1,8 +1,4 @@
-package pkg
-
-import (
-	"fmt"
-)
+package orderedmap
 
 type color bool
 
@@ -363,28 +359,6 @@ func (t *RedBlackBST[K, V]) ceiling(x *node[K, V], key K) *node[K, V] {
 		return y
 	}
 	return x
-}
-
-func (t *RedBlackBST[K, V]) Select(rank int) (K, bool) {
-	if rank < 0 || rank >= t.Size() {
-		var zero K
-		return zero, false
-	}
-	return t.select(t.root, rank).key, true
-}
-
-func (t *RedBlackBST[K, V]) select(x *node[K, V], rank int) *node[K, V] {
-	if x == nil {
-		return nil
-	}
-	leftSize := t.size(x.left)
-	if leftSize > rank {
-		return t.select(x.left, rank)
-	} else if leftSize < rank {
-		return t.select(x.right, rank-leftSize-1)
-	} else {
-		return x
-	}
 }
 
 func (t *RedBlackBST[K, V]) Rank(key K) int {
