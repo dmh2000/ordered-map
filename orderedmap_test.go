@@ -1,7 +1,10 @@
 package orderedmap
 
 import (
+	"math/rand"
+	"strconv"
 	"testing"
+	"time"
 )
 
 func TestNewOrderedMapEmpty(t *testing.T) {
@@ -148,3 +151,48 @@ func TestPutAndGetWithDifferentTypes(t *testing.T) {
 }
 
 const numberOfElements = 1000
+
+func TestRandomAddGetDelete(t *testing.T) {
+	om := NewOrderedMap[string, int]()
+	rand.Seed(time.Now().UnixNano())
+
+	// Add random elements
+	for i := 0; i < numberOfElements; i++ {
+		num := rand.Intn(1000000)
+		key := strconv.Itoa(num)
+		om.Put(key, num)
+	}
+
+	if om.Size() != numberOfElements {
+		t.Errorf("Expected size %d, got %d", numberOfElements, om.Size())
+	}
+
+	// Get and verify random elements
+	for i := 0; i < numberOfElements/2; i++ {
+		num := rand.Intn(1000000)
+		key := strconv.Itoa(num)
+		value, found := om.Get(key)
+		if found {
+			if value != num {
+				t.Errorf("Expected value %d for key %s, got %d", num, key, value)
+			}
+		}
+	}
+
+	// Delete random elements
+	deletedCount := 0
+	for i := 0; i < numberOfElements/2; i++ {
+		num := rand.Intn(1000000)
+		key := strconv.Itoa(num)
+		initialSize := om.Size()
+		om.Delete(key)
+		if om.Size() < initialSize {
+			deletedCount++
+		}
+	}
+
+	expectedSize := numberOfElements - deletedCount
+	if om.Size() != expectedSize {
+		t.Errorf("Expected size %d after deletions, got %d", expectedSize, om.Size())
+	}
+}
