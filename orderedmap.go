@@ -165,6 +165,7 @@ func (t *OrderedMap[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
 		h.right = t.put(h.right, key, val)
 	default:
 		h.val = val
+		return h // Return early if we're just updating a value
 	}
 
 	if t.isRed(h.right) && !t.isRed(h.left) {
