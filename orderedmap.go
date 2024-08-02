@@ -116,6 +116,8 @@ func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
 // helper functions
 // ===========================================
 
+// isRed checks if a given node is red.
+// nil nodes are considered black.
 func (t *OrderedMap[K, V]) isRed(x *node[K, V]) bool {
 	if x == nil {
 		return false
@@ -123,6 +125,8 @@ func (t *OrderedMap[K, V]) isRed(x *node[K, V]) bool {
 	return x.color == RED
 }
 
+// size returns the number of nodes in the subtree rooted at x.
+// Returns 0 if x is nil.
 func (t *OrderedMap[K, V]) size(x *node[K, V]) int {
 	if x == nil {
 		return 0
@@ -130,6 +134,8 @@ func (t *OrderedMap[K, V]) size(x *node[K, V]) int {
 	return x.size
 }
 
+// get searches for a key in the subtree rooted at x.
+// Returns the associated value and true if found, zero value and false otherwise.
 func (t *OrderedMap[K, V]) get(x *node[K, V], key K) (V, bool) {
 	for x != nil {
 		switch {
@@ -145,6 +151,8 @@ func (t *OrderedMap[K, V]) get(x *node[K, V], key K) (V, bool) {
 	return zero, false
 }
 
+// put inserts a key-value pair into the subtree rooted at h.
+// Returns the (possibly new) root of the subtree.
 func (t *OrderedMap[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
 	if h == nil {
 		return &node[K, V]{key: key, val: val, color: RED, size: 1}
@@ -173,6 +181,8 @@ func (t *OrderedMap[K, V]) put(h *node[K, V], key K, val V) *node[K, V] {
 	return h
 }
 
+// rotateRight performs a right rotation on the given node.
+// Returns the new root of the rotated subtree.
 func (t *OrderedMap[K, V]) rotateRight(h *node[K, V]) *node[K, V] {
 	x := h.left
 	h.left = x.right
@@ -184,6 +194,8 @@ func (t *OrderedMap[K, V]) rotateRight(h *node[K, V]) *node[K, V] {
 	return x
 }
 
+// rotateLeft performs a left rotation on the given node.
+// Returns the new root of the rotated subtree.
 func (t *OrderedMap[K, V]) rotateLeft(h *node[K, V]) *node[K, V] {
 	x := h.right
 	h.right = x.left
@@ -195,6 +207,7 @@ func (t *OrderedMap[K, V]) rotateLeft(h *node[K, V]) *node[K, V] {
 	return x
 }
 
+// flipColors changes the color of a node and its two children.
 func (t *OrderedMap[K, V]) flipColors(h *node[K, V]) {
 	h.color = !h.color
 	h.left.color = !h.left.color
@@ -218,6 +231,8 @@ func (t *OrderedMap[K, V]) DeleteMin() {
 	}
 }
 
+// deleteMin removes the smallest key and associated value from the subtree rooted at h.
+// Returns the new root of the subtree.
 func (t *OrderedMap[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
 	if h.left == nil {
 		return nil
@@ -248,6 +263,8 @@ func (t *OrderedMap[K, V]) DeleteMax() {
 	}
 }
 
+// deleteMax removes the largest key and associated value from the subtree rooted at h.
+// Returns the new root of the subtree.
 func (t *OrderedMap[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
 	if t.isRed(h.left) {
 		h = t.rotateRight(h)
@@ -266,6 +283,8 @@ func (t *OrderedMap[K, V]) deleteMax(h *node[K, V]) *node[K, V] {
 	return t.balance(h)
 }
 
+// delete removes the key-value pair with the given key from the subtree rooted at h.
+// Returns the new root of the subtree.
 func (t *OrderedMap[K, V]) delete(h *node[K, V], key K) *node[K, V] {
 	if key < h.key {
 		if !t.isRed(h.left) && !t.isRed(h.left.left) {
@@ -294,6 +313,8 @@ func (t *OrderedMap[K, V]) delete(h *node[K, V], key K) *node[K, V] {
 	return t.balance(h)
 }
 
+// moveRedLeft makes h.left or one of its children red (if h is red),
+// assuming that h.left and h.left.left are black.
 func (t *OrderedMap[K, V]) moveRedLeft(h *node[K, V]) *node[K, V] {
 	t.flipColors(h)
 	if t.isRed(h.right.left) {
@@ -304,6 +325,8 @@ func (t *OrderedMap[K, V]) moveRedLeft(h *node[K, V]) *node[K, V] {
 	return h
 }
 
+// moveRedRight makes h.right or one of its children red (if h is red),
+// assuming that h.right and h.right.left are black.
 func (t *OrderedMap[K, V]) moveRedRight(h *node[K, V]) *node[K, V] {
 	t.flipColors(h)
 	if t.isRed(h.left.left) {
@@ -313,6 +336,7 @@ func (t *OrderedMap[K, V]) moveRedRight(h *node[K, V]) *node[K, V] {
 	return h
 }
 
+// balance restores red-black tree invariants if they have been violated.
 func (t *OrderedMap[K, V]) balance(h *node[K, V]) *node[K, V] {
 	if t.isRed(h.right) && !t.isRed(h.left) {
 		h = t.rotateLeft(h)
@@ -328,6 +352,7 @@ func (t *OrderedMap[K, V]) balance(h *node[K, V]) *node[K, V] {
 	return h
 }
 
+// min returns the node with the smallest key in the subtree rooted at x.
 func (t *OrderedMap[K, V]) min(x *node[K, V]) *node[K, V] {
 	if x.left == nil {
 		return x
@@ -335,6 +360,7 @@ func (t *OrderedMap[K, V]) min(x *node[K, V]) *node[K, V] {
 	return t.min(x.left)
 }
 
+// max returns the node with the largest key in the subtree rooted at x.
 func (t *OrderedMap[K, V]) max(x *node[K, V]) *node[K, V] {
 	if x.right == nil {
 		return x
@@ -342,6 +368,7 @@ func (t *OrderedMap[K, V]) max(x *node[K, V]) *node[K, V] {
 	return t.max(x.right)
 }
 
+// keysInRange collects keys in the given range [lo, hi] from the subtree rooted at x.
 func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	if x == nil {
 		return
