@@ -415,20 +415,20 @@ func (t *OrderedMap[K, V]) Select(rank int) (K, bool) {
 		var zero K
 		return zero, false
 	}
-	return t.select(t.root, rank)
+	return t.selectx(t.root, rank)
 }
 
 // select returns key in BST rooted at x of given rank.
-func (t *OrderedMap[K, V]) select(x *node[K, V], rank int) (K, bool) {
+func (t *OrderedMap[K, V]) selectx(x *node[K, V], rank int) (K, bool) {
 	if x == nil {
 		var zero K
 		return zero, false
 	}
 	leftSize := t.size(x.left)
 	if leftSize > rank {
-		return t.select(x.left, rank)
+		return t.selectx(x.left, rank)
 	} else if leftSize < rank {
-		return t.select(x.right, rank-leftSize-1)
+		return t.selectx(x.right, rank-leftSize-1)
 	} else {
 		return x.key, true
 	}
