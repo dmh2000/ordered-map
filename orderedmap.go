@@ -77,10 +77,7 @@ func (t *OrderedMap[K, V]) Keys() []K {
 
 // Size returns the number of key-value pairs in the map.
 func (t *OrderedMap[K, V]) Size() int {
-	if t.root == nil {
-		return 0
-	}
-	return t.root.size
+	return t.size(t.root)
 }
 
 // IsEmpty returns true if the map contains no key-value pairs, false otherwise.
