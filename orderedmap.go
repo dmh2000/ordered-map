@@ -386,3 +386,50 @@ func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 		t.keysInRange(x.right, queue, lo, hi)
 	}
 }
+
+// Rank returns the number of keys in the symbol table strictly less than key.
+func (t *OrderedMap[K, V]) Rank(key K) int {
+	return t.rank(key, t.root)
+}
+
+// rank returns the number of keys less than key in the subtree rooted at x
+func (t *OrderedMap[K, V]) rank(key K, x *node[K, V]) int {
+	if x == nil {
+		return 0
+	}
+	if key < x.key {
+		return t.rank(key, x.left)
+	}
+	if key > x.key {
+		return 1 + t.size(x.left) + t.rank(key, x.right)
+	}
+	return t.size(x.left)
+}
+
+// Select returns the key in the symbol table of a given rank.
+// This key has the property that there are rank keys in
+// the symbol table that are smaller. In other words, this key is the
+// (rank+1)st smallest key in the symbol table.
+func (t *OrderedMap[K, V]) Select(rank int) (K, bool) {
+	if rank < 0 || rank >= t.Size() {
+		var zero K
+		return zero, false
+	}
+	return t.select(t.root, rank)
+}
+
+// select returns key in BST rooted at x of given rank.
+func (t *OrderedMap[K, V]) select(x *node[K, V], rank int) (K, bool) {
+	if x == nil {
+		var zero K
+		return zero, false
+	}
+	leftSize := t.size(x.left)
+	if leftSize > rank {
+		return t.select(x.left, rank)
+	} else if leftSize < rank {
+		return t.select(x.right, rank-leftSize-1)
+	} else {
+		return x.key, true
+	}
+}
