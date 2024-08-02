@@ -154,11 +154,11 @@ const numberOfElements = 1000
 
 func TestRandomAddGetDelete(t *testing.T) {
 	om := NewOrderedMap[string, int]()
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// Add random elements
 	for i := 0; i < numberOfElements; i++ {
-		num := rand.Intn(1000000)
+		num := rng.Intn(1000000)
 		key := strconv.Itoa(num)
 		om.Put(key, num)
 	}
@@ -169,7 +169,7 @@ func TestRandomAddGetDelete(t *testing.T) {
 
 	// Get and verify random elements
 	for i := 0; i < numberOfElements/2; i++ {
-		num := rand.Intn(1000000)
+		num := rng.Intn(1000000)
 		key := strconv.Itoa(num)
 		value, found := om.Get(key)
 		if found {
@@ -182,7 +182,7 @@ func TestRandomAddGetDelete(t *testing.T) {
 	// Delete random elements
 	deletedCount := 0
 	for i := 0; i < numberOfElements/2; i++ {
-		num := rand.Intn(1000000)
+		num := rng.Intn(1000000)
 		key := strconv.Itoa(num)
 		initialSize := om.Size()
 		om.Delete(key)
