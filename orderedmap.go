@@ -29,20 +29,27 @@ func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
 // exported methods
 // ===========================================
 
+// Get retrieves the value associated with the given key.
+// It returns the value and a boolean indicating whether the key was found.
 func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 	return t.get(t.root, key)
 }
 
+// Put inserts a key-value pair into the map.
+// If the key already exists, its value is updated.
 func (t *OrderedMap[K, V]) Put(key K, val V) {
 	t.root = t.put(t.root, key, val)
 	t.root.color = BLACK
 }
 
+// Contains checks if the given key exists in the map.
 func (t *OrderedMap[K, V]) Contains(key K) bool {
 	_, found := t.Get(key)
 	return found
 }
 
+// Delete removes the key-value pair with the given key from the map.
+// If the key doesn't exist, this operation does nothing.
 func (t *OrderedMap[K, V]) Delete(key K) {
 	if !t.Contains(key) {
 		return
@@ -58,6 +65,7 @@ func (t *OrderedMap[K, V]) Delete(key K) {
 	}
 }
 
+// Keys returns a slice of all keys in the map, in order.
 func (t *OrderedMap[K, V]) Keys() []K {
 	if t.IsEmpty() {
 		return []K{}
@@ -67,14 +75,18 @@ func (t *OrderedMap[K, V]) Keys() []K {
 	return t.KeysInRange(min, max)
 }
 
+// Size returns the number of key-value pairs in the map.
 func (t *OrderedMap[K, V]) Size() int {
 	return t.size(t.root)
 }
 
+// IsEmpty returns true if the map contains no key-value pairs, false otherwise.
 func (t *OrderedMap[K, V]) IsEmpty() bool {
 	return t.root == nil
 }
 
+// Min returns the smallest key in the map and a boolean indicating if the map is not empty.
+// If the map is empty, it returns the zero value for K and false.
 func (t *OrderedMap[K, V]) Min() (K, bool) {
 	if t.IsEmpty() {
 		var zero K
@@ -83,6 +95,8 @@ func (t *OrderedMap[K, V]) Min() (K, bool) {
 	return t.min(t.root).key, true
 }
 
+// Max returns the largest key in the map and a boolean indicating if the map is not empty.
+// If the map is empty, it returns the zero value for K and false.
 func (t *OrderedMap[K, V]) Max() (K, bool) {
 	if t.IsEmpty() {
 		var zero K
@@ -91,6 +105,7 @@ func (t *OrderedMap[K, V]) Max() (K, bool) {
 	return t.max(t.root).key, true
 }
 
+// KeysInRange returns a slice of all keys in the map that are between lo and hi (inclusive), in order.
 func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
 	queue := make([]K, 0)
 	t.keysInRange(t.root, &queue, lo, hi)
@@ -186,6 +201,8 @@ func (t *OrderedMap[K, V]) flipColors(h *node[K, V]) {
 	h.right.color = !h.right.color
 }
 
+// DeleteMin removes the key-value pair with the smallest key from the map.
+// If the map is empty, this operation panics.
 func (t *OrderedMap[K, V]) DeleteMin() {
 	if t.IsEmpty() {
 		panic("BST underflow")
@@ -214,6 +231,8 @@ func (t *OrderedMap[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
 	return t.balance(h)
 }
 
+// DeleteMax removes the key-value pair with the largest key from the map.
+// If the map is empty, this operation panics.
 func (t *OrderedMap[K, V]) DeleteMax() {
 	if t.IsEmpty() {
 		panic("BST underflow")
