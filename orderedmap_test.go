@@ -146,3 +146,5 @@ func TestPutAndGetWithDifferentTypes(t *testing.T) {
 		t.Errorf("Expected value false for key 2.2, got %v", value2)
 	}
 }
+
+const numberOfElements = 1000
