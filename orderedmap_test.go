@@ -150,49 +150,127 @@ func TestPutAndGetWithDifferentTypes(t *testing.T) {
 	}
 }
 
-const numberOfElements = 1000
+const numberOfElements = 5000000
 
+func uniqueValues(n int) map[string]int {
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	m := make(map[string]int)
+	for i := 0; i < n; i++ {
+		v := rng.Int()
+		k := strconv.Itoa(rng.Int())
+		m[k] = v
+	}
+	return m
+}
 func TestRandomAddGetDelete(t *testing.T) {
 	om := NewOrderedMap[string, int]()
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	// create a list of unique random key/value pairs
+	m := uniqueValues(numberOfElements)
+	elements := len(m)
 
 	// Add random elements
-	for i := 0; i < numberOfElements; i++ {
-		num := rng.Intn(1000000)
-		key := strconv.Itoa(num)
-		om.Put(key, num)
+	for k, v := range m {
+		om.Put(k, v)
 	}
 
-	if om.Size() != numberOfElements {
+	if om.Size() != elements {
 		t.Errorf("Expected size %d, got %d", numberOfElements, om.Size())
 	}
 
 	// Get and verify random elements
-	for i := 0; i < numberOfElements/2; i++ {
-		num := rng.Intn(1000000)
-		key := strconv.Itoa(num)
-		value, found := om.Get(key)
+	for k, v := range m {
+		value, found := om.Get(k)
 		if found {
-			if value != num {
-				t.Errorf("Expected value %d for key %s, got %d", num, key, value)
+			if value != v {
+				t.Errorf("keys[i] = %s values[i] = %d, got %d", k, value, v)
 			}
 		}
 	}
 
 	// Delete random elements
-	deletedCount := 0
-	for i := 0; i < numberOfElements/2; i++ {
-		num := rng.Intn(1000000)
-		key := strconv.Itoa(num)
-		initialSize := om.Size()
-		om.Delete(key)
-		if om.Size() < initialSize {
-			deletedCount++
+	expectedSize := elements
+	for k := range m {
+		om.Delete(k)
+		if om.Size() != expectedSize-1 {
+			t.Errorf("Expected size %d after deletion, got %d", expectedSize-1, om.Size())
+		}
+		expectedSize--
+	}
+}
+
+func TestIterateOverKeys(t *testing.T) {
+	om := NewOrderedMap[string, int]()
+
+	// create a list of unique random key/value pairs
+	m := uniqueValues(numberOfElements)
+	elements := len(m)
+
+	// Add random elements
+	for k, v := range m {
+		om.Put(k, v)
+	}
+
+	if om.Size() != elements {
+		t.Errorf("Expected size %d, got %d", numberOfElements, om.Size())
+	}
+
+	// Get and verify random elements
+	keys := om.Keys()
+	for _, k := range keys {
+		value, found := om.Get(k)
+		// check all keys are found
+		if !found {
+			t.Errorf("Key %s not found in map", k)
+		}
+		// check value against map
+		if found {
+			if value != m[k] {
+				t.Errorf("keys[i] = %s values[i] = %d, got %d", k, value, m[k])
+			}
 		}
 	}
 
-	expectedSize := numberOfElements - deletedCount
-	if om.Size() != expectedSize {
-		t.Errorf("Expected size %d after deletions, got %d", expectedSize, om.Size())
+	// check keys are in order
+	keys = om.Keys()
+	kn := keys[0]
+	for i := 1; i < len(keys); i++ {
+		if kn >= keys[i] {
+			t.Errorf("Keys not in order: %s, %s", kn, keys[i])
+		}
+		// t.Log(kn, keys[i])
+		kn = keys[i]
+	}
+
+	// Delete random elements
+	expectedSize := elements
+	for k := range m {
+		om.Delete(k)
+		if om.Size() != expectedSize-1 {
+			t.Errorf("Expected size %d after deletion, got %d", expectedSize-1, om.Size())
+		}
+		expectedSize--
+	}
+}
+
+// compare time using a standard go map
+func TestIterateOverMap(t *testing.T) {
+	// create a list of unique random key/value pairs
+	m := uniqueValues(numberOfElements)
+
+	// create a new maps from m
+	p := make(map[string]int)
+	for k, v := range m {
+		p[k] = v
+	}
+
+	// Get and verify random elements
+	for k, v := range p {
+		value, found := p[k]
+		if found {
+			if value != v {
+				t.Errorf("keys[i] = %s values[i] = %d, got %d", k, value, v)
+			}
+		}
 	}
 }
