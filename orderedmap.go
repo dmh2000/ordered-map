@@ -27,7 +27,12 @@ func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
 }
 
 // Get retrieves the value associated with the given key.
-// It returns the value and a boolean indicating whether the key was found.
+// Parameters:
+//   - key: The key to search for in the OrderedMap.
+// Returns:
+//   - V: The value associated with the key if found.
+//   - bool: true if the key was found, false otherwise.
+// If the key is not found, the zero value of V and false are returned.
 func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 	return t.get(t.root, key)
 }
