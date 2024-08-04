@@ -218,6 +218,16 @@ public:
         if (!isEmpty()) root->color = BLACK;
     }
 
+    Node* min(Node* x) const {
+        if (x->left == nullptr) return x;
+        return min(x->left);
+    }
+
+    Node* max(Node* x) const {
+        if (x->right == nullptr) return x;
+        return max(x->right);
+    }
+
     Key min() const {
         if (isEmpty()) throw std::runtime_error("Called min() with empty OrderedMap");
         return min(root)->key;
