@@ -141,7 +141,7 @@ private:
             if (!isRed(h->right) && !isRed(h->right->left))
                 h = moveRedRight(h);
             if (key == h->key) {
-                Node* x = min(h->right);
+                Node* x = minx(h->right);
                 h->key = x->key;
                 h->val = x->val;
                 h->right = deleteMin(h->right);
@@ -230,7 +230,7 @@ public:
 
     std::vector<Key> keys() const {
         if (isEmpty()) return std::vector<Key>();
-        return keys(min(), max());
+        return keys(minx(), maxx());
     }
 
     std::vector<Key> keys(const Key& lo, const Key& hi) const {
