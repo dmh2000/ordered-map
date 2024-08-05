@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <queue>
+#include <vector>
 #include <algorithm>
 
 template<typename Key, typename Value>
@@ -113,11 +113,6 @@ private:
         return h;
     }
 
-    Node* min(Node* x) const {
-        if (x->left == nullptr) return x;
-        return min(x->left);
-    }
-
     Node* deleteMin(Node* h) {
         if (h->left == nullptr) return nullptr;
 
@@ -152,11 +147,11 @@ private:
         return balance(h);
     }
 
-    void keys(Node* x, std::queue<Key>& queue, const Key& lo, const Key& hi) const {
+    void keys(Node* x, std::vector<Key>& v, const Key& lo, const Key& hi) const {
         if (x == nullptr) return;
-        if (lo < x->key) keys(x->left, queue, lo, hi);
-        if (lo <= x->key && x->key <= hi) queue.push(x->key);
-        if (x->key < hi) keys(x->right, queue, lo, hi);
+        if (lo < x->key) keys(x->left, v, lo, hi);
+        if (lo <= x->key && x->key <= hi) v.push_back(x->key);
+        if (x->key < hi) keys(x->right, v, lo, hi);
     }
 
 public:
@@ -244,9 +239,9 @@ public:
     }
 
     std::vector<Key> keys(const Key& lo, const Key& hi) const {
-        std::queue<Key> queue;
-        keys(root, queue, lo, hi);
-        return std::vector<Key>(queue.front(), queue.back());
+        std::vector<Key> v;
+        keys(root, v, lo, hi);
+        return v;
     }
 };
 
@@ -254,9 +249,12 @@ public:
 int main() {
     OrderedMap<std::string, int> map;
 
-    map.put("A", 1);
-    map.put("B", 2);
     map.put("C", 3);
+    map.put("A", 1);
+    map.put("G", 5);
+    map.put("H", 6);
+    map.put("B", 2);
+    map.put("F", 4);
 
     std::cout << "Size: " << map.size() << std::endl;
     std::cout << "Contains 'B': " << (map.contains("B") ? "Yes" : "No") << std::endl;
@@ -266,9 +264,9 @@ int main() {
 
     std::cout << "Size after deleting 'B': " << map.size() << std::endl;
 
-    std::cout << "Keys: ";
+    std::cout << "Keys: \n";
     for (const auto& key : map.keys()) {
-        std::cout << key << " ";
+        std::cout << key << " " << map.get(key) << "\n";
     }
     std::cout << std::endl;
 

@@ -27,12 +27,6 @@ func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
 }
 
 // Get retrieves the value associated with the given key.
-// Parameters:
-//   - key: The key to search for in the OrderedMap.
-// Returns:
-//   - V: The value associated with the key if found.
-//   - bool: true if the key was found, false otherwise.
-// If the key is not found, the zero value of V and false are returned.
 func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 	return t.get(t.root, key)
 }
@@ -359,15 +353,46 @@ func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	if x == nil {
 		return
 	}
-	cmplo := lo < x.key
-	cmphi := hi > x.key
-	if cmplo {
+	// Claude had error in comparison order
+	cmplt := lo < x.key
+	cmple := lo <= x.key
+	cmpgt := hi > x.key
+	cmpge := hi >= x.key
+
+	if cmplt {
 		t.keysInRange(x.left, queue, lo, hi)
 	}
-	if cmplo && cmphi {
+	if cmple && cmpge {
 		*queue = append(*queue, x.key)
 	}
-	if cmphi {
+	if cmpgt {
 		t.keysInRange(x.right, queue, lo, hi)
 	}
+}
+
+func (t *OrderedMap[K, V]) keysInRangeBFS(x *node[K, V], queue *[]K) []K {
+
+	if x == nil {
+		return []K{}
+	}
+
+	// visit
+	*queue = append(*queue, x.key)
+
+	// go left
+	t.keysInRangeBFS(x.left, queue)
+	t.keysInRangeBFS(x.right, queue)
+
+	return *queue
+}
+
+func (t *OrderedMap[K, V]) KeysInRangeBFS() []K {
+	if t.IsEmpty() {
+		return []K{}
+	}
+
+	queue := make([]K, 0)
+	t.keysInRangeBFS(t.root, &queue)
+
+	return queue
 }
