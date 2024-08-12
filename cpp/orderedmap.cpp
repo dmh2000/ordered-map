@@ -2,8 +2,11 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <optional>
+#include <functional>
 
-template<typename Key, typename Value>
+template<typename Key, typename Value, typename Compare = std::less<Key>>
 class OrderedMap {
 private:
     static const bool RED = true;
@@ -12,235 +15,243 @@ private:
     struct Node {
         Key key;
         Value val;
-        Node* left;
-        Node* right;
+        std::unique_ptr<Node> left;
+        std::unique_ptr<Node> right;
         bool color;
         int size;
 
         Node(Key k, Value v, bool col, int sz) 
-            : key(k), val(v), left(nullptr), right(nullptr), color(col), size(sz) {}
+            : key(std::move(k)), val(std::move(v)), left(nullptr), right(nullptr), color(col), size(sz) {}
     };
 
-    Node* root;
+    std::unique_ptr<Node> root;
+    Compare comp;
 
-    bool isRed(Node* x) const {
+    bool isRed(const Node* x) const noexcept {
         if (x == nullptr) return false;
         return x->color == RED;
     }
 
-    int size(Node* x) const {
+    int size(const Node* x) const noexcept {
         if (x == nullptr) return 0;
         return x->size;
     }
 
-    Value get(Node* x, const Key& key) const {
+    std::optional<Value> get(const Node* x, const Key& key) const {
         while (x != nullptr) {
-            if (key < x->key) x = x->left;
-            else if (x->key < key) x = x->right;
+            if (comp(key, x->key)) x = x->left.get();
+            else if (comp(x->key, key)) x = x->right.get();
             else return x->val;
         }
-        throw std::runtime_error("Key not found");
+        return std::nullopt;
     }
 
-    Node* put(Node* h, const Key& key, const Value& val) {
-        if (h == nullptr) return new Node(key, val, RED, 1);
+    std::unique_ptr<Node> put(std::unique_ptr<Node> h, const Key& key, const Value& val) {
+        if (h == nullptr) return std::make_unique<Node>(key, val, RED, 1);
 
-        if (key < h->key) h->left = put(h->left, key, val);
-        else if (h->key < key) h->right = put(h->right, key, val);
+        if (comp(key, h->key)) h->left = put(std::move(h->left), key, val);
+        else if (comp(h->key, key)) h->right = put(std::move(h->right), key, val);
         else h->val = val;
 
-        if (isRed(h->right) && !isRed(h->left)) h = rotateLeft(h);
-        if (isRed(h->left) && isRed(h->left->left)) h = rotateRight(h);
-        if (isRed(h->left) && isRed(h->right)) flipColors(h);
+        if (isRed(h->right.get()) && !isRed(h->left.get())) h = rotateLeft(std::move(h));
+        if (isRed(h->left.get()) && isRed(h->left->left.get())) h = rotateRight(std::move(h));
+        if (isRed(h->left.get()) && isRed(h->right.get())) flipColors(h.get());
 
-        h->size = size(h->left) + size(h->right) + 1;
+        h->size = size(h->left.get()) + size(h->right.get()) + 1;
         return h;
     }
 
-    Node* rotateRight(Node* h) {
-        Node* x = h->left;
-        h->left = x->right;
-        x->right = h;
-        x->color = h->color;
-        h->color = RED;
-        x->size = h->size;
-        h->size = size(h->left) + size(h->right) + 1;
+    std::unique_ptr<Node> rotateRight(std::unique_ptr<Node> h) {
+        auto x = std::move(h->left);
+        h->left = std::move(x->right);
+        x->right = std::move(h);
+        x->color = x->right->color;
+        x->right->color = RED;
+        x->size = x->right->size;
+        x->right->size = size(x->right->left.get()) + size(x->right->right.get()) + 1;
         return x;
     }
 
-    Node* rotateLeft(Node* h) {
-        Node* x = h->right;
-        h->right = x->left;
-        x->left = h;
-        x->color = h->color;
-        h->color = RED;
-        x->size = h->size;
-        h->size = size(h->left) + size(h->right) + 1;
+    std::unique_ptr<Node> rotateLeft(std::unique_ptr<Node> h) {
+        auto x = std::move(h->right);
+        h->right = std::move(x->left);
+        x->left = std::move(h);
+        x->color = x->left->color;
+        x->left->color = RED;
+        x->size = x->left->size;
+        x->left->size = size(x->left->left.get()) + size(x->left->right.get()) + 1;
         return x;
     }
 
-    void flipColors(Node* h) {
+    void flipColors(Node* h) noexcept {
         h->color = !h->color;
         h->left->color = !h->left->color;
         h->right->color = !h->right->color;
     }
 
-    Node* moveRedLeft(Node* h) {
-        flipColors(h);
-        if (isRed(h->right->left)) {
-            h->right = rotateRight(h->right);
-            h = rotateLeft(h);
-            flipColors(h);
+    std::unique_ptr<Node> moveRedLeft(std::unique_ptr<Node> h) {
+        flipColors(h.get());
+        if (isRed(h->right->left.get())) {
+            h->right = rotateRight(std::move(h->right));
+            h = rotateLeft(std::move(h));
+            flipColors(h.get());
         }
         return h;
     }
 
-    Node* moveRedRight(Node* h) {
-        flipColors(h);
-        if (isRed(h->left->left)) {
-            h = rotateRight(h);
-            flipColors(h);
+    std::unique_ptr<Node> moveRedRight(std::unique_ptr<Node> h) {
+        flipColors(h.get());
+        if (isRed(h->left->left.get())) {
+            h = rotateRight(std::move(h));
+            flipColors(h.get());
         }
         return h;
     }
 
-    Node* balance(Node* h) {
-        if (isRed(h->right) && !isRed(h->left)) h = rotateLeft(h);
-        if (isRed(h->left) && isRed(h->left->left)) h = rotateRight(h);
-        if (isRed(h->left) && isRed(h->right)) flipColors(h);
+    std::unique_ptr<Node> balance(std::unique_ptr<Node> h) {
+        if (isRed(h->right.get()) && !isRed(h->left.get())) h = rotateLeft(std::move(h));
+        if (isRed(h->left.get()) && isRed(h->left->left.get())) h = rotateRight(std::move(h));
+        if (isRed(h->left.get()) && isRed(h->right.get())) flipColors(h.get());
 
-        h->size = size(h->left) + size(h->right) + 1;
+        h->size = size(h->left.get()) + size(h->right.get()) + 1;
         return h;
     }
 
-    Node* deleteMin(Node* h) {
+    std::unique_ptr<Node> deleteMin(std::unique_ptr<Node> h) {
         if (h->left == nullptr) return nullptr;
 
-        if (!isRed(h->left) && !isRed(h->left->left))
-            h = moveRedLeft(h);
+        if (!isRed(h->left.get()) && !isRed(h->left->left.get()))
+            h = moveRedLeft(std::move(h));
 
-        h->left = deleteMin(h->left);
-        return balance(h);
+        h->left = deleteMin(std::move(h->left));
+        return balance(std::move(h));
     }
 
-    Node* deleteNode(Node* h, const Key& key) {
-        if (key < h->key) {
-            if (!isRed(h->left) && !isRed(h->left->left))
-                h = moveRedLeft(h);
-            h->left = deleteNode(h->left, key);
+    std::unique_ptr<Node> deleteNode(std::unique_ptr<Node> h, const Key& key) {
+        if (comp(key, h->key)) {
+            if (!isRed(h->left.get()) && !isRed(h->left->left.get()))
+                h = moveRedLeft(std::move(h));
+            h->left = deleteNode(std::move(h->left), key);
         } else {
-            if (isRed(h->left))
-                h = rotateRight(h);
-            if (key == h->key && h->right == nullptr)
+            if (isRed(h->left.get()))
+                h = rotateRight(std::move(h));
+            if (!comp(h->key, key) && !comp(key, h->key) && h->right == nullptr)
                 return nullptr;
-            if (!isRed(h->right) && !isRed(h->right->left))
-                h = moveRedRight(h);
-            if (key == h->key) {
-                Node* x = min(h->right);
+            if (!isRed(h->right.get()) && !isRed(h->right->left.get()))
+                h = moveRedRight(std::move(h));
+            if (!comp(h->key, key) && !comp(key, h->key)) {
+                auto x = min(h->right.get());
                 h->key = x->key;
                 h->val = x->val;
-                h->right = deleteMin(h->right);
+                h->right = deleteMin(std::move(h->right));
             } else {
-                h->right = deleteNode(h->right, key);
+                h->right = deleteNode(std::move(h->right), key);
             }
         }
-        return balance(h);
+        return balance(std::move(h));
     }
 
-    void keys(Node* x, std::vector<Key>& v, const Key& lo, const Key& hi) const {
+    void keys(const Node* x, std::vector<Key>& v, const Key& lo, const Key& hi) const {
         if (x == nullptr) return;
-        if (lo < x->key) keys(x->left, v, lo, hi);
-        if (lo <= x->key && x->key <= hi) v.push_back(x->key);
-        if (x->key < hi) keys(x->right, v, lo, hi);
+        if (comp(lo, x->key)) keys(x->left.get(), v, lo, hi);
+        if (!comp(x->key, lo) && !comp(hi, x->key)) v.push_back(x->key);
+        if (comp(x->key, hi)) keys(x->right.get(), v, lo, hi);
     }
 
 public:
-    OrderedMap() : root(nullptr) {}
+    OrderedMap() : root(nullptr), comp(Compare()) {}
+    explicit OrderedMap(const Compare& comp) : root(nullptr), comp(comp) {}
 
-    int size() const {
-        return size(root);
+    OrderedMap(const OrderedMap& other) = delete;
+    OrderedMap& operator=(const OrderedMap& other) = delete;
+
+    OrderedMap(OrderedMap&& other) noexcept = default;
+    OrderedMap& operator=(OrderedMap&& other) noexcept = default;
+
+    int size() const noexcept {
+        return size(root.get());
     }
 
-    bool isEmpty() const {
+    bool isEmpty() const noexcept {
         return root == nullptr;
     }
 
-    Value get(const Key& key) const {
-        return get(root, key);
+    std::optional<Value> get(const Key& key) const {
+        return get(root.get(), key);
     }
 
     bool contains(const Key& key) const {
-        try {
-            get(key);
-            return true;
-        } catch (const std::runtime_error&) {
-            return false;
-        }
+        return get(key).has_value();
     }
 
     void put(const Key& key, const Value& val) {
-        root = put(root, key, val);
+        root = put(std::move(root), key, val);
         root->color = BLACK;
     }
 
     void deleteMin() {
         if (isEmpty()) throw std::runtime_error("OrderedMap underflow");
 
-        if (!isRed(root->left) && !isRed(root->right))
+        if (!isRed(root->left.get()) && !isRed(root->right.get()))
             root->color = RED;
 
-        root = deleteMin(root);
+        root = deleteMin(std::move(root));
         if (!isEmpty()) root->color = BLACK;
     }
 
     void deleteMax() {
         if (isEmpty()) throw std::runtime_error("OrderedMap underflow");
 
-        if (!isRed(root->left) && !isRed(root->right))
+        if (!isRed(root->left.get()) && !isRed(root->right.get()))
             root->color = RED;
 
-        root = deleteMax(root);
+        root = deleteMax(std::move(root));
         if (!isEmpty()) root->color = BLACK;
     }
 
     void deleteNode(const Key& key) {
         if (!contains(key)) return;
 
-        if (!isRed(root->left) && !isRed(root->right))
+        if (!isRed(root->left.get()) && !isRed(root->right.get()))
             root->color = RED;
 
-        root = deleteNode(root, key);
+        root = deleteNode(std::move(root), key);
         if (!isEmpty()) root->color = BLACK;
     }
 
-    Node* min(Node* x) const {
+    const Node* min(const Node* x) const {
         if (x->left == nullptr) return x;
-        return min(x->left);
+        return min(x->left.get());
     }
 
-    Node* max(Node* x) const {
+    const Node* max(const Node* x) const {
         if (x->right == nullptr) return x;
-        return max(x->right);
+        return max(x->right.get());
     }
 
-    Key min() const {
-        if (isEmpty()) throw std::runtime_error("Called min() with empty OrderedMap");
-        return min(root)->key;
+    std::optional<Key> min() const {
+        if (isEmpty()) return std::nullopt;
+        return min(root.get())->key;
     }
 
-    Key max() const {
-        if (isEmpty()) throw std::runtime_error("Called max() with empty OrderedMap");
-        return max(root)->key;
+    std::optional<Key> max() const {
+        if (isEmpty()) return std::nullopt;
+        return max(root.get())->key;
     }
 
     std::vector<Key> keys() const {
         if (isEmpty()) return std::vector<Key>();
-        return keys(min(), max());
+        auto minKey = min();
+        auto maxKey = max();
+        if (minKey && maxKey) {
+            return keys(*minKey, *maxKey);
+        }
+        return std::vector<Key>();
     }
 
     std::vector<Key> keys(const Key& lo, const Key& hi) const {
         std::vector<Key> v;
-        keys(root, v, lo, hi);
+        keys(root.get(), v, lo, hi);
         return v;
     }
 };
@@ -258,7 +269,10 @@ int main() {
 
     std::cout << "Size: " << map.size() << std::endl;
     std::cout << "Contains 'B': " << (map.contains("B") ? "Yes" : "No") << std::endl;
-    std::cout << "Value of 'C': " << map.get("C") << std::endl;
+    
+    if (auto value = map.get("C"); value) {
+        std::cout << "Value of 'C': " << *value << std::endl;
+    }
 
     map.deleteNode("B");
 
@@ -266,7 +280,9 @@ int main() {
 
     std::cout << "Keys: \n";
     for (const auto& key : map.keys()) {
-        std::cout << key << " " << map.get(key) << "\n";
+        if (auto value = map.get(key); value) {
+            std::cout << key << " " << *value << "\n";
+        }
     }
     std::cout << std::endl;
 

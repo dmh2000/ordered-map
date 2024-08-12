@@ -1,6 +1,11 @@
 package orderedmap
 
-import "golang.org/x/exp/constraints"
+import (
+	"errors"
+	"fmt"
+
+	"golang.org/x/exp/constraints"
+)
 
 type color bool
 
@@ -17,6 +22,7 @@ type node[K constraints.Ordered, V any] struct {
 	size        int
 }
 
+// OrderedMap represents a red-black tree based ordered map.
 type OrderedMap[K constraints.Ordered, V any] struct {
 	root *node[K, V]
 }
@@ -27,6 +33,7 @@ func NewOrderedMap[K constraints.Ordered, V any]() *OrderedMap[K, V] {
 }
 
 // Get retrieves the value associated with the given key.
+// It returns the value and a boolean indicating whether the key was found.
 func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 	return t.get(t.root, key)
 }
@@ -106,6 +113,25 @@ func (t *OrderedMap[K, V]) KeysInRange(lo, hi K) []K {
 	queue := make([]K, 0)
 	t.keysInRange(t.root, &queue, lo, hi)
 	return queue
+}
+
+// Clear removes all elements from the OrderedMap.
+func (t *OrderedMap[K, V]) Clear() {
+	t.root = nil
+}
+
+// ForEach applies the given function to each key-value pair in the OrderedMap.
+func (t *OrderedMap[K, V]) ForEach(f func(K, V)) {
+	t.forEach(t.root, f)
+}
+
+// ToSlice returns a slice of key-value pairs in the OrderedMap.
+func (t *OrderedMap[K, V]) ToSlice() []struct{ Key K; Value V } {
+	result := make([]struct{ Key K; Value V }, 0, t.Size())
+	t.ForEach(func(k K, v V) {
+		result = append(result, struct{ Key K; Value V }{k, v})
+	})
+	return result
 }
 
 // isRed checks if a given node is red.
@@ -202,9 +228,9 @@ func (t *OrderedMap[K, V]) flipColors(h *node[K, V]) {
 }
 
 // DeleteMin removes the smallest key and associated value from the map.
-func (t *OrderedMap[K, V]) DeleteMin() {
+func (t *OrderedMap[K, V]) DeleteMin() error {
 	if t.IsEmpty() {
-		panic("BST underflow")
+		return errors.New("OrderedMap underflow")
 	}
 
 	if !t.isRed(t.root.left) && !t.isRed(t.root.right) {
@@ -215,6 +241,7 @@ func (t *OrderedMap[K, V]) DeleteMin() {
 	if !t.IsEmpty() {
 		t.root.color = BLACK
 	}
+	return nil
 }
 
 // deleteMin removes the node with the smallest key from the subtree rooted at h.
@@ -232,9 +259,9 @@ func (t *OrderedMap[K, V]) deleteMin(h *node[K, V]) *node[K, V] {
 }
 
 // DeleteMax removes the largest key and associated value from the map.
-func (t *OrderedMap[K, V]) DeleteMax() {
+func (t *OrderedMap[K, V]) DeleteMax() error {
 	if t.IsEmpty() {
-		panic("BST underflow")
+		return errors.New("OrderedMap underflow")
 	}
 
 	if !t.isRed(t.root.left) && !t.isRed(t.root.right) {
@@ -245,6 +272,7 @@ func (t *OrderedMap[K, V]) DeleteMax() {
 	if !t.IsEmpty() {
 		t.root.color = BLACK
 	}
+	return nil
 }
 
 // deleteMax removes the node with the largest key from the subtree rooted at h.
@@ -353,46 +381,60 @@ func (t *OrderedMap[K, V]) keysInRange(x *node[K, V], queue *[]K, lo, hi K) {
 	if x == nil {
 		return
 	}
-	// Claude had error in comparison order
-	cmplt := lo < x.key
-	cmple := lo <= x.key
-	cmpgt := hi > x.key
-	cmpge := hi >= x.key
+	cmplo := lo < x.key
+	cmphi := hi > x.key
 
-	if cmplt {
+	if cmplo {
 		t.keysInRange(x.left, queue, lo, hi)
 	}
-	if cmple && cmpge {
+	if lo <= x.key && x.key <= hi {
 		*queue = append(*queue, x.key)
 	}
-	if cmpgt {
+	if cmphi {
 		t.keysInRange(x.right, queue, lo, hi)
 	}
 }
 
-func (t *OrderedMap[K, V]) keysInRangeBFS(x *node[K, V], queue *[]K) []K {
-
+// forEach applies the given function to each key-value pair in the subtree rooted at x.
+func (t *OrderedMap[K, V]) forEach(x *node[K, V], f func(K, V)) {
 	if x == nil {
-		return []K{}
+		return
 	}
-
-	// visit
-	*queue = append(*queue, x.key)
-
-	// go left
-	t.keysInRangeBFS(x.left, queue)
-	t.keysInRangeBFS(x.right, queue)
-
-	return *queue
+	t.forEach(x.left, f)
+	f(x.key, x.val)
+	t.forEach(x.right, f)
 }
 
-func (t *OrderedMap[K, V]) KeysInRangeBFS() []K {
-	if t.IsEmpty() {
-		return []K{}
+// String returns a string representation of the OrderedMap.
+func (t *OrderedMap[K, V]) String() string {
+	var result string
+	t.ForEach(func(k K, v V) {
+		result += fmt.Sprintf("%v: %v, ", k, v)
+	})
+	if len(result) > 2 {
+		result = result[:len(result)-2]
 	}
-
-	queue := make([]K, 0)
-	t.keysInRangeBFS(t.root, &queue)
-
-	return queue
+	return "{" + result + "}"
 }
+
+// OrderedMapInterface defines the interface for OrderedMap operations.
+type OrderedMapInterface[K constraints.Ordered, V any] interface {
+	Get(key K) (V, bool)
+	Put(key K, val V)
+	Contains(key K) bool
+	Delete(key K)
+	Keys() []K
+	Size() int
+	IsEmpty() bool
+	Min() (K, bool)
+	Max() (K, bool)
+	KeysInRange(lo, hi K) []K
+	Clear()
+	ForEach(f func(K, V))
+	ToSlice() []struct{ Key K; Value V }
+	DeleteMin() error
+	DeleteMax() error
+}
+
+// Ensure OrderedMap implements OrderedMapInterface
+var _ OrderedMapInterface[int, string] = (*OrderedMap[int, string])(nil)
