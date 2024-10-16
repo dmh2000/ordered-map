@@ -6,3 +6,45 @@ The reference for the algorithm is [Algorithms, 4th edition by Robert Sedgewick 
 
 The original port was made automatically using [Anthropic Claude-3.5-Sonnet](https://www.anthropic.com/) and [aider-chat](https://aider.chat/). The Java code is very extensive and complete, and the Go version is a manually pared down subset that supports functions similar to what a Go map provides, including Get, Put, Delete, Contains, IsEmpty and iterate over (in order). 
 
+## Rust Implementation
+
+A Rust implementation of the `OrderedMap` is also available. The Rust version provides similar functionality to the Go version, including methods for getting, putting, deleting, and checking the existence of keys, as well as iterating over keys in order.
+
+### Usage
+
+To use the Rust implementation, add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+orderedmap = { path = "path/to/orderedmap" }
+```
+
+Then, in your Rust code, you can use the `OrderedMap` as follows:
+
+```rust
+use orderedmap::OrderedMap;
+
+fn main() {
+    let mut map = OrderedMap::new();
+
+    map.put("C", 3);
+    map.put("A", 1);
+    map.put("G", 5);
+    map.put("H", 6);
+    map.put("B", 2);
+    map.put("F", 4);
+
+    println!("Size: {}", map.size());
+    println!("Contains 'B': {}", map.contains("B"));
+    println!("Value of 'C': {:?}", map.get("C"));
+
+    map.delete("B");
+
+    println!("Size after deleting 'B': {}", map.size());
+
+    println!("Keys: ");
+    for key in map.keys() {
+        println!("{}: {:?}", key, map.get(key));
+    }
+}
+```
